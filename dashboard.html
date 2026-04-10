@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AgentView Pro · Live Call Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Space Grotesk',sans-serif;background:#060D1A;min-height:100vh}
+.dash{background:#0B1120;min-height:100vh;color:#fff}
+.header{background:#0F1929;border-bottom:1px solid #1E2D45;padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
+.logo-area{display:flex;align-items:center;gap:12px}
+.logo-text{font-size:16px;font-weight:600;color:#E2E8F0;letter-spacing:0.5px}
+.logo-sub{font-size:11px;color:#4A6280;font-weight:400;margin-top:2px}
+.pulse-wrap{display:flex;align-items:center;gap:10px}
+.pulse-dot{width:9px;height:9px;border-radius:50%;background:#EF4444;position:relative;flex-shrink:0}
+.pulse-dot::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid #EF4444;opacity:0;animation:pulseRing 1.5s ease-out infinite}
+@keyframes pulseRing{0%{opacity:0.7;transform:scale(1)}100%{opacity:0;transform:scale(2.4)}}
+.live-label{font-size:11px;font-weight:600;color:#EF4444;letter-spacing:1.5px}
+.ts{font-size:12px;color:#4A6280;font-family:'JetBrains Mono',monospace}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:20px 28px}
+@media(max-width:700px){.metrics{grid-template-columns:repeat(2,1fr)}}
+.mc{background:#0F1929;border:1px solid #1E2D45;border-radius:10px;padding:16px 18px}
+.mc-val{font-size:32px;font-weight:600;line-height:1;margin-bottom:6px}
+.mc-lbl{font-size:11px;color:#4A6280;font-weight:500;letter-spacing:0.3px;display:flex;align-items:center;gap:6px}
+.mc-dot{display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0}
+.v-online{color:#94F27B}.v-call{color:#EF4444}.v-avail{color:#22D3EE}.v-brk{color:#FBBF24}
+.b-online{background:#94F27B}.b-call{background:#EF4444}.b-avail{background:#22D3EE}.b-brk{background:#FBBF24}
+.section-label{padding:4px 28px 12px;font-size:11px;color:#4A6280;letter-spacing:1.2px;font-weight:500}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;padding:0 28px 32px}
+.agent-card{background:#0F1929;border:1px solid #1E2D45;border-radius:10px;padding:16px;position:relative;overflow:hidden;transition:border-color 0.2s}
+.agent-card.on-call{border-color:#EF444450}
+.agent-card.available{border-color:#22D3EE35}
+.agent-card.break{border-color:#FBBF2435}
+.card-top{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.avatar{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.av-red{background:#3B1212;color:#FCA5A5}
+.av-teal{background:#0C2A2E;color:#67E8F9}
+.av-green{background:#102110;color:#86EFAC}
+.av-amber{background:#2A1A07;color:#FCD34D}
+.agent-name{font-size:13px;font-weight:600;color:#E2E8F0;line-height:1.3}
+.agent-role{font-size:11px;color:#4A6280;margin-top:2px}
+.status-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:0.4px;margin-left:auto;flex-shrink:0;white-space:nowrap}
+.sb-call{background:#3B1212;color:#FCA5A5;border:1px solid #EF444440}
+.sb-avail{background:#0C2A2E;color:#67E8F9;border:1px solid #22D3EE40}
+.sb-brk{background:#2A1A07;color:#FCD34D;border:1px solid #FBBF2440}
+.sb-dot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.d-red{background:#EF4444}.d-teal{background:#22D3EE}.d-amber{background:#FBBF24}.d-green{background:#4ADE80}
+.call-info{background:#0B1120;border-radius:8px;padding:12px 14px;margin-bottom:12px}
+.call-label{font-size:10px;color:#4A6280;margin-bottom:6px;font-weight:500;letter-spacing:0.5px}
+.call-lead{font-size:13px;font-weight:600;color:#E2E8F0;margin-bottom:4px}
+.call-num{font-size:11px;color:#4A6280;font-family:'JetBrains Mono',monospace}
+.timer-row{margin-top:10px;display:flex;align-items:center;justify-content:space-between}
+.timer-lbl{font-size:10px;color:#4A6280;letter-spacing:0.4px}
+.timer{font-size:18px;font-weight:600;color:#EF4444;font-family:'JetBrains Mono',monospace;letter-spacing:2px}
+.idle-state{text-align:center;padding:16px 0 8px;color:#2A3A50;font-size:12px}
+.actions{display:flex;gap:8px}
+.act-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:7px;border:1px solid #1E2D45;background:#0B1120;color:#4A6280;font-size:11px;font-weight:500;cursor:pointer;transition:all 0.15s;font-family:'Space Grotesk',sans-serif}
+.act-btn:hover{border-color:#22D3EE50;color:#22D3EE;background:#0C2A2E}
+.act-btn svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.corner-accent{position:absolute;top:0;right:0;width:50px;height:50px;opacity:0.06;border-radius:0 10px 0 0}
+.accent-red{background:linear-gradient(135deg,#EF4444,transparent)}
+.accent-teal{background:linear-gradient(135deg,#22D3EE,transparent)}
+.accent-amber{background:linear-gradient(135deg,#FBBF24,transparent)}
+</style>
+</head>
+<body>
+<div class="dash">
+  <div class="header">
+    <div class="logo-area">
+      <div>
+        <div class="logo-text">AgentView Pro</div>
+        <div class="logo-sub">LIVE CALL MONITOR &middot; GHL SYNCED</div>
+      </div>
+    </div>
+    <div class="pulse-wrap">
+      <div class="pulse-dot"></div>
+      <span class="live-label">LIVE</span>
+      <span class="ts" id="ts">--:--:--</span>
+    </div>
+  </div>
+
+  <div class="metrics">
+    <div class="mc">
+      <div class="mc-val v-online">8</div>
+      <div class="mc-lbl"><span class="mc-dot b-online"></span>Agents Online</div>
+    </div>
+    <div class="mc">
+      <div class="mc-val v-call">5</div>
+      <div class="mc-lbl"><span class="mc-dot b-call"></span>On Call Now</div>
+    </div>
+    <div class="mc">
+      <div class="mc-val v-avail">2</div>
+      <div class="mc-lbl"><span class="mc-dot b-avail"></span>Ready for Calls</div>
+    </div>
+    <div class="mc">
+      <div class="mc-val v-brk">1</div>
+      <div class="mc-lbl"><span class="mc-dot b-brk"></span>On Break / DND</div>
+    </div>
+  </div>
+
+  <div class="section-label">AGENT GRID &mdash; REAL-TIME STATUS</div>
+  <div class="grid" id="agentGrid"></div>
+</div>
+
+<script>
+const agents = [
+  {name:"Marcus Webb",role:"Sr. Sales Rep",init:"MW",av:"av-red",status:"on-call",lead:"Jennifer Collins",phone:"+1 (407) 882-3301",startSec:287},
+  {name:"Sofia Rivera",role:"Account Exec",init:"SR",av:"av-teal",status:"available",lead:null,phone:null,startSec:0},
+  {name:"Derek Pham",role:"Sales Rep",init:"DP",av:"av-red",status:"on-call",lead:"Robert Tanner",phone:"+1 (305) 441-7820",startSec:143},
+  {name:"Aaliyah James",role:"Closer",init:"AJ",av:"av-green",status:"available",lead:null,phone:null,startSec:0},
+  {name:"Brendan Cole",role:"Sales Rep",init:"BC",av:"av-red",status:"on-call",lead:"Patricia Huang",phone:"+1 (512) 993-0044",startSec:522},
+  {name:"Nadia Osei",role:"Sr. Closer",init:"NO",av:"av-red",status:"on-call",lead:"Carl Whitmore",phone:"+1 (786) 220-6187",startSec:64},
+  {name:"Tyler Banks",role:"Sales Rep",init:"TB",av:"av-amber",status:"break",lead:null,phone:null,startSec:0},
+  {name:"Keisha Monroe",role:"Account Exec",init:"KM",av:"av-red",status:"on-call",lead:"Steven O'Brien",phone:"+1 (813) 557-2290",startSec:198},
+];
+
+const elapsed = agents.map(a => a.startSec);
+
+function fmt(s){
+  const m = Math.floor(s/60), sec = s%60;
+  return String(m).padStart(2,'0') + ':' + String(sec).padStart(2,'0');
+}
+
+function buildCard(a, idx){
+  const isCall = a.status==='on-call';
+  const isAvail = a.status==='available';
+  const isBreak = a.status==='break';
+  const cardClass = isCall?'on-call':isAvail?'available':'break';
+  const sbClass = isCall?'sb-call':isAvail?'sb-avail':'sb-brk';
+  const sbDot = isCall?'d-red':isAvail?'d-teal':'d-amber';
+  const sbText = isCall?'IN A CALL':isAvail?'READY':'ON BREAK';
+  const accentClass = isCall?'accent-red':isAvail?'accent-teal':'accent-amber';
+
+  let callSection = '';
+  if(isCall){
+    callSection = `<div class="call-info">
+      <div class="call-label">CURRENT LEAD</div>
+      <div class="call-lead">${a.lead}</div>
+      <div class="call-num">${a.phone}</div>
+      <div class="timer-row">
+        <span class="timer-lbl">DURATION</span>
+        <span class="timer" id="timer-${idx}">${fmt(elapsed[idx])}</span>
+      </div>
+    </div>`;
+  } else {
+    callSection = `<div class="idle-state">${isBreak ? '☕ Away &middot; Back soon' : '📞 Waiting for next call'}</div><div style="height:14px"></div>`;
+  }
+
+  return `<div class="agent-card ${cardClass}">
+    <div class="corner-accent ${accentClass}"></div>
+    <div class="card-top">
+      <div class="avatar ${a.av}">${a.init}</div>
+      <div style="flex:1;min-width:0">
+        <div class="agent-name">${a.name}</div>
+        <div class="agent-role">${a.role}</div>
+      </div>
+      <div class="status-badge ${sbClass}"><span class="sb-dot ${sbDot}"></span>${sbText}</div>
+    </div>
+    ${callSection}
+    <div class="actions">
+      <button class="act-btn">
+        <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        Listen Live
+      </button>
+      <button class="act-btn">
+        <svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Message
+      </button>
+    </div>
+  </div>`;
+}
+
+function render(){
+  document.getElementById('agentGrid').innerHTML = agents.map((a,i)=>buildCard(a,i)).join('');
+}
+
+render();
+
+setInterval(()=>{
+  agents.forEach((a,i)=>{
+    if(a.status==='on-call'){
+      elapsed[i]++;
+      const el = document.getElementById('timer-'+i);
+      if(el) el.textContent = fmt(elapsed[i]);
+    }
+  });
+  document.getElementById('ts').textContent = new Date().toLocaleTimeString('en-US',{hour12:false});
+}, 1000);
+
+document.getElementById('ts').textContent = new Date().toLocaleTimeString('en-US',{hour12:false});
+</script>
+</body>
+</html>
